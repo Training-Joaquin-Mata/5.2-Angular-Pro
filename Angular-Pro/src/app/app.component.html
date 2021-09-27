@@ -1,13 +1,17 @@
-<div>
+<!-- <div class= "ui-g 12">
+  <div class= "ui-g 1" style=" width:300px">
     <auth-form 
-      (submitted)="createUser($event)">
+      (submitted)="createUser($event)" style=" width:300px">
       <h3>Create account</h3>
       <button type ="submit"> Join us </button>
     </auth-form>
+</div>  -->
+<div class= "ui-g 1" style=" width:300px">
     <auth-form 
-      (submitted)="loginUser($event)">
+      (submitted)="loginUser($event)" style=" width:300px">
       <h3>Login</h3>
       <auth-remember (checked)= "rememberUser($event)"></auth-remember>
       <button type ="submit"> Login </button>
     </auth-form>
   </div>
+<!-- </div>  -->

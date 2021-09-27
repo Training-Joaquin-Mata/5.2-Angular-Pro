@@ -6,6 +6,7 @@ import { AppComponent } from './app.component';
 
 import {  AuthFormModule } from './auth-form/auth-form.module'
 
+
 @NgModule({
   declarations: [
     AppComponent
