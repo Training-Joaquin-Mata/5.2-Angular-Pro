@@ -1,11 +1,18 @@
-import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, FormArray } from '@angular/forms';
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, FormArray, Validators, AbstractControl } from '@angular/forms';
 
-import { Product } from '../../models/product.interface';
+import { StockValidators } from './stock-inventory.validators';
+
+import { Observable } from 'rxjs/Observable';
+import 'rxjs/add/observable/forkJoin';
+
+import { StockInventoryService } from '../../services/stock-inventory.service';
+
+import { Product, Item } from '../../models/product.interface';
 
 @Component({
   selector: 'stock-inventory',
-  styleUrls: ['./stock-inventory.component.scss'],
+  styleUrls: ['stock-inventory.component.scss'],
   template: `
     <div class="stock-inventory">
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
@@ -22,8 +29,13 @@ import { Product } from '../../models/product.interface';
 
         <stock-products
           [parent]="form"
+          [map]="productMap"
           (removed)="removeStock($event)">
         </stock-products>
+
+        <div class="stock-inventory__price">
+          Total: {{ total | currency:'USD':true }}
+        </div>
 
         <div class="stock-inventory__buttons">
           <button 
@@ -39,31 +51,67 @@ import { Product } from '../../models/product.interface';
     </div>
   `
 })
-export class StockInventoryComponent {
+export class StockInventoryComponent implements OnInit {
 
-  products: Product[] = [
-    { "id": 1, "price": 2800, "name": "MacBook Pro" },
-    { "id": 2, "price": 50, "name": "USB-C Adaptor" },
-    { "id": 3, "price": 400, "name": "iPod" },
-    { "id": 4, "price": 900, "name": "iPhone" },
-    { "id": 5, "price": 600, "name": "Apple Watch" },
-  ];
+  products: Product[];
+
+  total: number;
+
+  productMap: Map<number, Product>;
 
   form = this.fb.group({
     store: this.fb.group({
-      branch: '',
-      code: ''
+      branch: [
+        '',
+        [Validators.required, StockValidators.checkBranch],
+        [this.validateBranch.bind(this)]
+      ],
+      code: ['', Validators.required]
     }),
     selector: this.createStock({}),
-    stock: this.fb.array([
-      this.createStock({ product_id: 1, quantity: 10 }),
-      this.createStock({ product_id: 3, quantity: 50 }),
-    ])
-  })
+    stock: this.fb.array([])
+  }, { validator: StockValidators.checkStockExists });
 
   constructor(
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private stockService: StockInventoryService
   ) {}
+
+  ngOnInit() {
+    const cart = this.stockService.getCartItems();
+    const products = this.stockService.getProducts();
+
+    Observable
+      .forkJoin(cart, products)
+      .subscribe(([cart, products]: [Item[], Product[]]) => {
+        
+        const myMap = products
+          .map<[number, Product]>(product => [product.id, product]);
+        
+        this.productMap = new Map<number, Product>(myMap);
+        this.products = products;
+        cart.forEach(item => this.addStock(item));
+
+        this.calculateTotal(this.form.get('stock').value);
+        this.form.get('stock')
+          .valueChanges.subscribe(value => this.calculateTotal(value));
+
+      });
+
+  }
+
+  validateBranch(control: AbstractControl) {
+    return this.stockService
+      .checkBranchId(control.value)
+      .map((response: boolean) => response ? null : { unknownBranch: true });
+  }
+
+  calculateTotal(value: Item[]) {
+    const total = value.reduce((prev, next) => {
+      return prev + (next.quantity * this.productMap.get(next.product_id).price);
+    }, 0);
+    this.total = total;
+  }
 
   createStock(stock) {
     return this.fb.group({
