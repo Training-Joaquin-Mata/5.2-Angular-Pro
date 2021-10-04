@@ -1,8 +1,9 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 
-import { AppRoutingModule } from './app-routing.module';
+import { FoodStoreModule } from './food-store/food-store.module';
 import { AppComponent } from './app.component';
+import { HttpModule } from '@angular/http';
 
 @NgModule({
   declarations: [
@@ -10,9 +11,14 @@ import { AppComponent } from './app.component';
   ],
   imports: [
     BrowserModule,
-    AppRoutingModule
+    HttpModule,
+    FoodStoreModule.forRoot({
+      storeId: 10292,
+      storeToken: 'eca938c99a0e9ff91029dc'
+    })
   ],
-  providers: [],
-  bootstrap: [AppComponent]
+  bootstrap: [
+    AppComponent
+  ]
 })
-export class AppModule { }
+export class AppModule {}

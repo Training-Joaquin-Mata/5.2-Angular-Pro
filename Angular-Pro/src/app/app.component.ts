@@ -1,10 +1,15 @@
 import { Component } from '@angular/core';
+import { FoodStoreService } from './food-store/food-store.service';
 
 @Component({
   selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+  template: `
+    <div>
+      Food Store ({{ (store | async)?.name }})
+    </div>
+  `
 })
 export class AppComponent {
-  title = 'Angular-Pro';
+  store = this.foodService.getStore();
+  constructor(private foodService: FoodStoreService) {}
 }
